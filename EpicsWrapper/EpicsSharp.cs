@@ -72,8 +72,6 @@ namespace EpicsWrapper
             {
                 return er.Message;
             }
-
-            return "test";
         }
     }
 }

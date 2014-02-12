@@ -21,7 +21,10 @@ namespace SimpleWeb
                 _pvroot = Session["PvRoot"].ToString();
 
                 _epics = new EpicsWrapper.EpicsSharp();
-                _epics.SetSearchAddresses(ConfigurationManager.AppSettings["AddressList"]);
+
+                string addresses = ConfigurationManager.AppSettings["AddressList"];
+                //_epics.SetSearchAddresses("130.246.49.66;130.246.49.66:5066;130.246.49.66:5068");
+                _epics.SetSearchAddresses(addresses);
 
                 String name = _pvroot.ToUpper();
                 if (name.StartsWith("NDX"))
