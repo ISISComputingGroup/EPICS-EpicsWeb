@@ -1,0 +1,15 @@
+﻿body {
+}
+
+label {
+  font-weight : bold;
+}
+
+.namelabel {
+  font-weight : bold;
+  font-size : x-large;
+}
+
+.blocklabel {
+  font-weight : bold;
+}
