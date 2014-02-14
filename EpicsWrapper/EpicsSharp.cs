@@ -23,6 +23,11 @@ namespace EpicsWrapper
             _client.Configuration.SearchAddress = addresses;
         }
 
+        public void CloseChannelsAndDisconnect()
+        {
+            _client.Dispose();
+        }
+
         public string GetSimplePvAsString(string pvname)
         {
             if (!_channels.ContainsKey(pvname))

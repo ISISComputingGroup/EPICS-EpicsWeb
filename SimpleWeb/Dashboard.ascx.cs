@@ -20,11 +20,14 @@ namespace SimpleWeb
             {
                 _pvroot = Session["PvRoot"].ToString();
 
-                _epics = new EpicsWrapper.EpicsSharp();
+                if (_epics == null)
+                {
+                    _epics = new EpicsWrapper.EpicsSharp();
 
-                string addresses = ConfigurationManager.AppSettings["AddressList"];
-                //_epics.SetSearchAddresses("130.246.49.66;130.246.49.66:5066;130.246.49.66:5068");
-                _epics.SetSearchAddresses(addresses);
+                    string addresses = ConfigurationManager.AppSettings["AddressList"];
+                    //_epics.SetSearchAddresses("130.246.49.66;130.246.49.66:5066;130.246.49.66:5068");
+                    _epics.SetSearchAddresses(addresses);
+                }
 
                 String name = _pvroot.ToUpper();
                 if (name.StartsWith("NDX"))
@@ -40,6 +43,9 @@ namespace SimpleWeb
                     getErrorCount();
                     lblUpdated.Text = "Last Updated: " + DateTime.Now.ToString("HH:mm:ss");
                 }
+
+                //Should we clean up the channels?
+                _epics.CloseChannelsAndDisconnect();
             }
         }
 
