@@ -25,11 +25,11 @@ namespace SimpleWeb
                     _epics = new EpicsWrapper.EpicsSharp();
 
                     string addresses = ConfigurationManager.AppSettings["AddressList"];
-                    //_epics.SetSearchAddresses("130.246.49.66;130.246.49.66:5066;130.246.49.66:5068");
+                    //_epics.SetSearchAddresses("130.246.49.66;130.246.58.66:5066;130.246.49.58:5068");
                     _epics.SetSearchAddresses(addresses);
                 }
 
-                String name = _pvroot.ToUpper();
+                String name = _pvroot;
                 if (name.StartsWith("NDX"))
                 {
                     name = name.Remove(0, 3);
@@ -73,7 +73,8 @@ namespace SimpleWeb
 
                 if (!String.IsNullOrEmpty(valuesReq[i]))
                 {
-                    value = _epics.GetSimplePvAsString(_pvroot + valuesReq[i]);
+                    string name = _pvroot + valuesReq[i];
+                    value = _epics.GetSimplePvAsString(name.Replace("::", ":"));
                 }
                 lstRunInfo.Items.Add(labelsReq[i] + " " + value);
             }
@@ -91,103 +92,80 @@ namespace SimpleWeb
             }
         }
 
+        class Group
+        {
+            public string Name;
+            public List<string> Blocks = new List<string>();
+
+            public Group(string name)
+            {
+                Name = name;
+            }
+        }
+
         private void getBlocks()
         {
-            List<String> blocknames = new List<string>(_epics.GetWaveformPvAsString("NDW613:BLOCKS").Split(';'));
-
-            List<String> blockvalues = new List<string>();
-
-            lblBlocks.Text = "<ul>";
-
-            foreach(string name in blocknames)
+            try
             {
-                //Get the value
-                string value = _epics.GetSimplePvAsString(name);
-                //blockvalues.Add(_epics.GetSimplePvAsString(name));
+                List<String> rawgroups = new List<string>(_epics.GetWaveformPvAsString(_pvroot + ":GROUPINGS").Split(';'));
+                List<Group> groups = new List<Group>();
 
-                lblBlocks.Text += "<li>" + name + ": " + value + "</li>";
+                foreach (string s in rawgroups)
+                {
+                    if (s.StartsWith("|"))
+                    {
+                        groups.Add(new Group(s.Replace("|", "").Trim()));
+                    }
+                    else
+                    {
+                        if (!string.IsNullOrEmpty(s))
+                        {
+                            groups[groups.Count - 1].Blocks.Add(s);
+                        }
+                    }
+                }
+
+                if (groups.Count == 1 && groups[0].Name == "NONE")
+                {
+                    //No groups so use simple formatting
+                    lblBlocks.Text = "<ul>";
+
+                    foreach (string name in groups[0].Blocks)
+                    {
+                        //Get the value
+                        string value = _epics.GetSimplePvAsString(name);
+                        lblBlocks.Text += "<li>" + name + ": " + value + "</li>";
+                    }
+
+                    lblBlocks.Text += "</ul>";
+                    return;
+                }
+
+                lblBlocks.Text = "";
+
+                foreach (Group g in groups)
+                {
+                    if (g.Name == "NONE")
+                    {
+                        lblBlocks.Text += "<span style=\"font-weight:bold;\">Other</span><ul>";
+                    }
+                    else
+                    {
+                        lblBlocks.Text += "<span style=\"font-weight:bold;\">" + g.Name + "</span><ul>";
+                    }
+
+                    foreach (String name in g.Blocks)
+                    {
+                        string value = _epics.GetSimplePvAsString(name);
+                        lblBlocks.Text += "<li>" + name + ": " + value + "</li>";
+                    }
+                    lblBlocks.Text += "</ul>";
+                }
             }
-
-            lblBlocks.Text += "</ul>";
-
-
-
-
-            //try
-            //{
-            //    List<String> blocks = getBlocksFromSeci(getSeciConnection(lblName.Text), getInvisible);
-
-            //    lblBlocks.Text = "";
-            //    lblBlocksTest.Text = "";
-
-            //    if (blocks.Count > 0)
-            //    {
-            //        lblBlocks.Text += "<span style=\"font-weight:bold;\">Blocks</span>";
-
-            //        Dictionary<String, List<String>> groups = new Dictionary<string, List<string>>();
-            //        groups["None"] = new List<string>();
-
-            //        for (int i = 0; i < blocks.Count; ++i)
-            //        {
-            //            if (blocks[i].Contains("<Group="))
-            //            {
-            //                int lastindex = blocks[i].LastIndexOf('=');
-            //                String group = blocks[i].Substring(lastindex + 1, blocks[i].Length - lastindex - 2);
-            //                if (groups.ContainsKey(group))
-            //                {
-            //                    groups[group].Add(blocks[i].Substring(0, blocks[i].IndexOf("<Group=")));
-            //                }
-            //                else
-            //                {
-            //                    groups[group] = new List<string>();
-            //                    groups[group].Add(blocks[i].Substring(0, blocks[i].IndexOf("<Group=")));
-            //                }
-            //            }
-            //            else
-            //            {
-            //                groups["None"].Add(blocks[i]);
-            //            }
-            //        }
-
-            //        foreach (String key in groups.Keys)
-            //        {
-            //            if (key != "None")
-            //            {
-            //                lblBlocksTest.Text += "<span style=\"font-weight:bold;\">" + key + "</span><ul>";
-            //                foreach (String value in groups[key])
-            //                {
-            //                    lblBlocksTest.Text += "<li>" + value + "</li>";
-            //                }
-            //                lblBlocksTest.Text += "</ul>";
-            //            }
-            //        }
-
-            //        if (groups.Keys.Count > 1 && groups["None"].Count > 0)
-            //        {
-            //            lblBlocksTest.Text += "<span style=\"font-weight:bold;\">Other</span><ul>";
-
-            //            foreach (String value in groups["None"])
-            //            {
-            //                lblBlocksTest.Text += "<li>" + value + "</li>";
-            //            }
-            //            lblBlocksTest.Text += "</ul>";
-            //        }
-            //        else
-            //        {
-            //            lblBlocksTest.Text += "<ul>";
-            //            foreach (String value in groups["None"])
-            //            {
-            //                lblBlocksTest.Text += "<li>" + value + "</li>";
-            //            }
-            //            lblBlocksTest.Text += "</ul>";
-            //        }
-            //    }
-            //}
-            //catch
-            //{
-            //    lblBlocks.Text = "";
-            //    lblBlocksTest.Text = "";
-            //}
+            catch
+            {
+                lblBlocks.Text = "";
+            }
         }
     }
 }

@@ -25,12 +25,12 @@
             <label>Blocks</label>
             <br />
 
-            <asp:Label ID="lblBlocks" runat="server" Text="Label" ></asp:Label>
+            <asp:Label ID="lblBlocks" runat="server" Text="" ></asp:Label>
         </td>
     </tr>
     <tr>
         <td class="style1">
-            <asp:Label ID="lblUpdated" runat="server" Text="Label" ></asp:Label></td>
+            <asp:Label ID="lblUpdated" runat="server" Text="" ></asp:Label></td>
         <td valign="top">
             &nbsp;</td>
     </tr>
