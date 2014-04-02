@@ -1,5 +1,5 @@
 ﻿<%@ Control Language="C#" AutoEventWireup="true" CodeBehind="Dashboard.ascx.cs" Inherits="SimpleWeb.Dashboard" %>
-<%@ OutputCache Duration="30" VaryByParam="PvRoot" %>
+<%@ OutputCache Duration="30" VaryByParam="instrument" %>
 <table style="width:600px;">
     <tr>
         <td class="style1">

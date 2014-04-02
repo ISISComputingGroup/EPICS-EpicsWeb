@@ -11,10 +11,8 @@ namespace SimpleWeb
     {
         protected void Page_Load(object sender, EventArgs e)
         {
-            String PvRoot = Request.QueryString.Get("PvRoot");
-            Session.Add("PvRoot", PvRoot);
-
-            //string addresses = Request.QueryString.Get("Address");
+            String PvRoot = Request.QueryString.Get("instrument");
+            Session.Add("instrument", PvRoot);
         }
     }
 }

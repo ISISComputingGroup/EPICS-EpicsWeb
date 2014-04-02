@@ -119,6 +119,10 @@
       <Project>{3CA5A901-B5DB-4146-8334-398ABEB7C242}</Project>
       <Name>EpicsWrapper</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Zlib\Zlib DLL.csproj">
+      <Project>{9816BA86-9250-4C00-A912-25F07F8677D1}</Project>
+      <Name>Zlib DLL</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v10.0\WebApplications\Microsoft.WebApplication.targets" />

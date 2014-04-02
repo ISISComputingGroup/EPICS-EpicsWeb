@@ -1,4 +1,4 @@
-﻿Run Status=:DAE:RUNSTATUS_STR
+﻿Run Status=:DAE:RUNSTATE_STR
 Run Number=:DAE:RUNNUMBER
 Start Time=:DAE:STARTTIME
 Total Run Time=:DAE:RUNDURATION
