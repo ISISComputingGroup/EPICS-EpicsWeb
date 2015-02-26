@@ -1,0 +1,204 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>ISIS Web Dashboard</title>
+
+
+    <link rel="stylesheet" type="text/css" href="dashboard.css">
+    <script language="javascript" type="text/javascript" src="/Scripts/jquery-2.1.3.min.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            var inst = getParameterByName("instrument").toUpperCase();
+            var prefix = "IN:" + inst;
+            $("#instrument").text(inst);
+
+            $.ajax({
+                url: 'http://dataweb.isis.rl.ac.uk/PVWebService/PVWebService.asmx/GetPV',
+                //url: 'http://localhost:61852/PVWebService.asmx/GetPV',
+                data: "{ 'pv': '" + prefix + ":DAE:RUNSTATE_STR' }",
+                type: "POST",
+                cache: false,
+                dataType: 'json',
+                contentType: "application/json; charset=utf-8",
+                success: function (msg) {
+                    //Start by getting the runinfo first as this should come back quickly (assuming the DAE IOC is running)
+                    var runstate = JSON.parse(msg.d).StrValue;
+                    var td = $("#runTable td#runstate");
+                    td.text(runstate);
+
+                    //Get the rest
+                    getRunInfoValue(prefix + ':DAE:RUNNUMBER', "runnum");
+                    getRunInfoValue(prefix + ':DAE:STARTTIME', "start");
+                    getRunInfoValue(prefix + ':DAE:RUNDURATION', "dur");
+                    getRunInfoValue(prefix + ':DAE:RUNDURATION_PD', "dur_pd");
+                    getRunInfoValue(prefix + ':DAE:GOODFRAMES', "gf");
+                    getRunInfoValue(prefix + ':DAE:GOODFRAMES_PD', "gf_pd");
+                    getRunInfoValue(prefix + ':DAE:RAWFRAMES', "rf");
+                    getRunInfoValue(prefix + ':DAE:RAWFRAMES_PD', "rf_pd");
+                    getRunInfoValue(prefix + ':DAE:PERIOD', "pd");
+                    getRunInfoValue(prefix + ':DAE:NUMPERIODS', "numpds");
+                    getRunInfoValue(prefix + ':DAE:PERIODSEQ', "pseq");
+                    getRunInfoValue(prefix + ':DAE:BEAMCURRENT', "beam");
+                    getRunInfoValue(prefix + ':DAE:TOTALUAMPS', "uamps");
+                    getRunInfoValue(prefix + ':DAE:COUNTRATE', "crate");
+                    getRunInfoValue(prefix + ':DAE:DAEMEMORYUSED', "daemem");
+                    getRunInfoValue(prefix + ':DAE:TOTALDAECOUNTS', "daecounts");
+                    getRunInfoValue(prefix + ':DAE:DAETIMINGSOURCE', "timsource");
+                    getRunInfoValue(prefix + ':DAE:MONITORCOUNTS', "moncnts");
+                    getRunInfoValue(prefix + ':DAE:MONITORSPECTRUM', "monspec");
+                    getRunInfoValue(prefix + ':DAE:MONITORFROM', "monfrom");
+                    getRunInfoValue(prefix + ':DAE:MONITORTO', "monto");
+                    getRunInfoValue(prefix + ':DAE:NUMTIMECHANNELS', "numtc");
+                    getRunInfoValue(prefix + ':DAE:NUMSPECTRA', "numspec");
+
+                    //Finally get the blocks as this may take some time
+                    getBlocks(prefix);
+                },
+                error: function (xhr, status, error) {
+                    var td = $("#runTable td#runstate");
+                    td.text("ERROR CONNECTING TO INSTRUMENT");
+                    td.css('color', 'red');
+                }
+            });
+
+
+
+        });
+
+        var getBlocks = function (pre) {
+            $.ajax({
+                url: 'http://dataweb.isis.rl.ac.uk/PVWebService/PVWebService.asmx/GetWaveformDehexedDecompressed',
+                //url: 'http://localhost:61852/PVWebService.asmx/GetWaveformDehexedDecompressed',
+                data: "{ 'pv': '" + pre + ":CS:BLOCKSERVER:GROUPS'}",
+                type: "POST",
+                cache: false,
+                dataType: 'json',
+                contentType: "application/json; charset=utf-8",
+                success: function (msg) {
+                    //Get the groups
+                    var raw = JSON.parse(msg.d).Value;
+                    var groups = JSON.parse(raw);
+                    groups.forEach(function (g) {
+                        if (g.blocks.length > 0) {
+                            $("#blockTable > tbody").append('<tr><td style="text-align: left;"><b>' + g.name + '</b></td><td></td></tr>');
+                            //Get the blocks
+                            g.blocks.forEach(function (b) {
+                                $("#blockTable > tbody").append('<tr><td style="text-align: right;">' + b + ':</td><td id="' + b + '"></td></tr>');
+                                getBlockValue(pre + ':CS:SB:', b);
+                            });
+                        }
+                    });
+                },
+                error: function (xhr, status, error) {
+                    //do something if there is an error?
+                }
+            });
+
+        };
+
+        var getBlockValue = function (pre, pv) {
+            $.ajax({
+                url: 'http://dataweb.isis.rl.ac.uk/PVWebService/PVWebService.asmx/GetPV',
+                //url: 'http://localhost:61852/PVWebService.asmx/GetPV',
+                data: "{ 'pv': '" + pre + pv + "' }",
+                type: "POST",
+                cache: false,
+                dataType: 'json',
+                contentType: "application/json; charset=utf-8",
+                success: function (msg) {
+                    //Get the current value
+                    var raw = JSON.parse(msg.d);
+                    var td = $("#blockTable td#" + pv);
+                    if (raw.Error == null) {
+                        td.text(raw.StrValue);
+                    }
+                    else {
+                        td.text(raw.Error);
+                        td.css('color', 'red');
+                    }
+                },
+                error: function (xhr, status, error) {
+                    alert("ERROR"); //do something if there is an error
+                }
+            });
+        };
+
+        var getRunInfoValue = function (pv, cell_id) {
+            $.ajax({
+                url: 'http://dataweb.isis.rl.ac.uk/PVWebService/PVWebService.asmx/GetPV',
+                //url: 'http://localhost:61852/PVWebService.asmx/GetPV',
+                data: "{ 'pv': '" + pv + "' }",
+                type: "POST",
+                cache: false,
+                dataType: 'json',
+                contentType: "application/json; charset=utf-8",
+                success: function (msg) {
+                    //Get the groups
+                    var raw = JSON.parse(msg.d);
+                    var td = $("#runTable td#" + cell_id);
+                    if (raw.Error == null) {
+                        td.text(raw.StrValue);
+                    }
+                    else {
+                        td.text(raw.Error);
+                        td.css('color', 'red');
+                    }
+                },
+                error: function (xhr, status, error) {
+                    alert("ERROR"); //do something if there is an error
+                }
+            });
+        };
+
+        function getParameterByName(name) {
+            name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+            var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+                results = regex.exec(location.search);
+            return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+        }
+
+
+    </script>
+</head>
+<body>
+    <p><b id="instrument">UNKNOWN</b></p>
+    <table align="left">
+        <tr>
+            <td valign="top">
+                <table id="runTable">
+                    <tbody>
+                        <tr><td style="text-align: right;">Run Status:</td><td id="runstate"></td></tr>
+                        <tr><td style="text-align: right;">Run Number:</td><td id="runnum"></td></tr>
+                        <tr><td style="text-align: right;">Start Time:</td><td id="start"></td></tr>
+                        <tr><td style="text-align: right;">Total Run Time:</td><td id="dur"></td></tr>
+                        <tr><td style="text-align: right;">Period Run Time:</td><td id="dur_pd"></td></tr>
+                        <tr><td style="text-align: right;">Good Frames (Total):</td><td id="gf"></td></tr>
+                        <tr><td style="text-align: right;">Good Frames (Period):</td><td id="gf_pd"></td></tr>
+                        <tr><td style="text-align: right;">Raw Frames (Total):</td><td id="rf"></td></tr>
+                        <tr><td style="text-align: right;">Raw Frames (Period):</td><td id="rf_pd"></td></tr>
+                        <tr><td style="text-align: right;">Current Period:</td><td id="pd"></td></tr>
+                        <tr><td style="text-align: right;">Number Of Periods:</td><td id="numpds"></td></tr>
+                        <tr><td style="text-align: right;">Period Sequence:</td><td id="pseq"></td></tr>
+                        <tr><td style="text-align: right;">Beam Current:</td><td id="beam"></td></tr>
+                        <tr><td style="text-align: right;">Total µAmps:</td><td id="uamps"></td></tr>
+                        <tr><td style="text-align: right;">Count-Rate:</td><td id="crate"></td></tr>
+                        <tr><td style="text-align: right;">DAE Memory Used:</td><td id="daemem"></td></tr>
+                        <tr><td style="text-align: right;">Total DAE Counts:</td><td id="daecounts"></td></tr>
+                        <tr><td style="text-align: right;">DAE Timing Source:</td><td id="timsource"></td></tr>
+                        <tr><td style="text-align: right;">Monitor Counts:</td><td id="moncnts"></td></tr>
+                        <tr><td style="text-align: right;">Monitor Spectrum:</td><td id="monspec"></td></tr>
+                        <tr><td style="text-align: right;">Monitor From:</td><td id="monfrom"></td></tr>
+                        <tr><td style="text-align: right;">Monitor To:</td><td id="monto"></td></tr>
+                        <tr><td style="text-align: right;">Number Of Time Channels:</td><td id="numtc"></td></tr>
+                        <tr><td style="text-align: right;">Number of Spectra:</td><td id="numspec"></td></tr>
+                    </tbody>
+                </table>
+            <td>
+                <table id="blockTable">
+                    <tbody></tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

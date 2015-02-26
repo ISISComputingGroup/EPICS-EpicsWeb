@@ -10,6 +10,7 @@ using System.Text;
 using System.IO.Compression;
 using System.Globalization;
 using System.Xml;
+using System.Web.Script.Serialization;
 
 namespace SimpleWeb
 {
@@ -30,7 +31,7 @@ namespace SimpleWeb
 
                     string addresses = ConfigurationManager.AppSettings[_instrument.ToUpper()];
                     //_epics.SetSearchAddresses("130.246.49.66;130.246.58.66:5066;130.246.49.58:5068");
-                    _epics.SetSearchAddresses(addresses);
+                    _epics.SetSearchAddresses(addresses + ";127.255.255.255;ROKE.ND.RL.AC.UK:5066");
                 }
 
                 String name = _instrument;
@@ -78,7 +79,7 @@ namespace SimpleWeb
                 if (!String.IsNullOrEmpty(valuesReq[i]))
                 {
                     string name = "IN:" + _instrument + valuesReq[i];
-                    value = _epics.GetSimplePvAsString(name.Replace("::", ":"));
+                    value = _epics.GetPV(name.Replace("::", ":"), false).StrValue;
                 }
                 lstRunInfo.Items.Add(labelsReq[i] + " " + value);
             }
@@ -96,17 +97,6 @@ namespace SimpleWeb
             }
         }
 
-        class Group
-        {
-            public string Name;
-            public List<string> Blocks = new List<string>();
-
-            public Group(string name)
-            {
-                Name = name;
-            }
-        }
-
         private static string Unzip(byte[] s)
         {
             return Ionic.Zlib.ZlibStream.UncompressString(s);           
@@ -116,40 +106,21 @@ namespace SimpleWeb
         {
             try
             {
-                List<Group> groups = new List<Group>();
+                String hexed = _epics.GetPV("IN:" + _instrument + ":CS:BLOCKSERVER:GROUPS", true).Value.ToString();
+                string json = Unzip(dehex(hexed));
 
-                String hexed = _epics.GetWaveformPvAsString("IN:" + _instrument + ":CS:BLOCKSERVER:GROUPINGS");
-                string xml = Unzip(dehex(hexed));
+                var serializer = new JavaScriptSerializer();
+                List<Group> groups = serializer.Deserialize<List<Group>>(json);
 
-                XmlDocument doc = new XmlDocument();
-                doc.LoadXml(xml);
-                XmlNode root = doc.DocumentElement;
-
-                XmlNodeList nodeList = root.SelectNodes("./group");
-
-                foreach (XmlNode grp in nodeList)
-                {
-                    Group temp = new Group(grp.Attributes["name"].Value);
-
-                    XmlNodeList subnodeList = grp.SelectNodes("./block");
-
-                    foreach (XmlNode blk in subnodeList)
-                    {
-                        temp.Blocks.Add(blk.Attributes["name"].Value);
-                    }
-
-                    groups.Add(temp);
-                }
-
-                if (groups.Count == 1 && groups[0].Name == "NONE")
+                if (groups.Count == 1 && groups[0].name == "NONE")
                 {
                     //No groups so use simple formatting
                     lblBlocks.Text = "<ul>";
 
-                    foreach (string name in groups[0].Blocks)
+                    foreach (string name in groups[0].blocks)
                     {
                         //Get the value
-                        string value = _epics.GetSimplePvAsString("IN:" + _instrument + "CS:SB:" + name);
+                        string value = _epics.GetPV("IN:" + _instrument + "CS:SB:" + name, false).StrValue;
                         lblBlocks.Text += "<li>" + name + ": " + value + "</li>";
                     }
 
@@ -161,24 +132,24 @@ namespace SimpleWeb
 
                 foreach (Group g in groups)
                 {
-                    if (g.Name == "NONE")
+                    if (g.name == "NONE")
                     {
                         lblBlocks.Text += "<span style=\"font-weight:bold;\">Other</span><ul>";
                     }
                     else
                     {
-                        lblBlocks.Text += "<span style=\"font-weight:bold;\">" + g.Name + "</span><ul>";
+                        lblBlocks.Text += "<span style=\"font-weight:bold;\">" + g.name + "</span><ul>";
                     }
 
-                    foreach (String name in g.Blocks)
+                    foreach (String name in g.blocks)
                     {
-                        string value = _epics.GetSimplePvAsString("IN:" + _instrument + ":CS:SB:" + name);
+                        string value = _epics.GetPV("IN:" + _instrument + ":CS:SB:" + name, false).StrValue;
                         lblBlocks.Text += "<li>" + name + ": " + value + "</li>";
                     }
                     lblBlocks.Text += "</ul>";
                 }
             }
-            catch
+            catch (Exception err)
             {
                 lblBlocks.Text = "";
             }

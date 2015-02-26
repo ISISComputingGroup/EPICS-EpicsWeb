@@ -1,0 +1,14 @@
+﻿body {
+    background-color: aliceblue;
+}
+
+p {
+    font-family: Arial, sans-serif;
+}
+
+/*table, th, td {
+   border: 1px solid black;
+}*/
+table{
+    padding-right: 50px;
+}
