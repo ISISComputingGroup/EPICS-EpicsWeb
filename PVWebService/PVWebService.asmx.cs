@@ -31,7 +31,7 @@ namespace PVWebService
             {
                 //Not fully thread safe, but it does not matter if the address get set multiple times really
                 addressesSet = true;
-                _epics.SetSearchAddresses("127.255.255.255;ROKE.ND.RL.AC.UK:5066");
+                _epics.SetSearchAddresses("127.255.255.255 130.246.51.255 130.246.55.255 130.246.39.255 130.246.39.152:5066");
             }
         }
 
