@@ -30,8 +30,9 @@ namespace SimpleWeb
                     _epics = new EpicsWrapper.EpicsSharp();
 
                     string addresses = ConfigurationManager.AppSettings[_instrument.ToUpper()];
+                    string central_server = ConfigurationManager.AppSettings["CENTRAL"];
                     //_epics.SetSearchAddresses("130.246.49.66;130.246.58.66:5066;130.246.49.58:5068");
-                    _epics.SetSearchAddresses(addresses + ";127.255.255.255;ROKE.ND.RL.AC.UK:5066");
+                    _epics.SetSearchAddresses(addresses + ";127.255.255.255;" + central_server + ":5066");
                 }
 
                 String name = _instrument;
